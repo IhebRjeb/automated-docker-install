@@ -31,3 +31,16 @@ To get started, simply follow the steps below.
 ```bash
 git clone https://github.com/yourusername/automated-docker-install.git
 cd automated-docker-install
+```
+
+### 2. Rendez-le exécutable :
+
+```bash
+chmod +x docker-installer.sh
+```
+
+### 3. Exécutez le script :
+
+```bash
+./docker-installer.sh
+```
