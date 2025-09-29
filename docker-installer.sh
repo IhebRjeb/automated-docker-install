@@ -213,14 +213,31 @@ verify_installation() {
         exit 1
     fi
     
-    # Test avec hello-world
-    log_info "Test de fonctionnement avec l'image hello-world..."
-    if sudo docker run --rm hello-world | grep -q "Hello from Docker"; then
-        log_success "Test hello-world réussi"
-    else
-        log_error "Le test hello-world a échoué"
-        exit 1
-    fi
+    # Choix pour le test hello-world avec validation
+    while true; do
+        log_info "Souhaitez-vous effectuer le test hello-world ? (oui/non)"
+        read -r response
+        
+        case $response in
+            [oO][uU][iI]|[oO]|[yY][eE][sS]|[yY])
+                log_info "Test de fonctionnement avec l'image hello-world..."
+                if sudo docker run --rm hello-world | grep -q "Hello from Docker"; then
+                    log_success "Test hello-world réussi"
+                else
+                    log_error "Le test hello-world a échoué"
+                    exit 1
+                fi
+                break
+                ;;
+            [nN][oO][nN]|[nN]|[nN][oO])
+                log_info "Test hello-world ignoré"
+                break
+                ;;
+            *)
+                log_warning "Réponse non valide. Veuillez répondre par 'oui' ou 'non'"
+                ;;
+        esac
+    done
 }
 
 # Configuration des permissions utilisateur
