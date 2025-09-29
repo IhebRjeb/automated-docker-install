@@ -224,24 +224,35 @@ verify_installation() {
 }
 
 # Configuration des permissions utilisateur
+# Configuration des permissions utilisateur (Version améliorée)
 setup_user_permissions() {
     log_info "Configuration des permissions utilisateur..."
     
     local current_user=$(whoami)
     
-    log_warning "Par défaut, Docker nécessite les privilèges root."
-    read -p "Voulez-vous ajouter l'utilisateur '$current_user' au groupe docker? [O/n]: " -n 1 -r
-    echo
-    
-    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        sudo usermod -aG docker "$current_user"
-        log_success "Utilisateur $current_user ajouté au groupe docker"
-        log_warning "Vous devez vous déconnecter et vous reconnecter pour que les changements prennent effet."
-        log_info "Après reconnexion, vous pourrez exécuter: docker run hello-world sans sudo"
+    # Vérifier si l'utilisateur est déjà dans le groupe docker
+    if groups "$current_user" | grep -q "\bdocker\b"; then
+        log_success "L'utilisateur $current_user est déjà dans le groupe docker."
+        log_info "Si les commandes Docker échouent encore, veuillez vous déconnecter et vous reconnecter."
     else
-        log_info "Ajout au groupe docker ignoré"
-        log_info "Vous devrez utiliser sudo pour toutes les commandes docker"
+        log_warning "Ajout de l'utilisateur '$current_user' au groupe docker pour éviter l'utilisation de sudo."
+        sudo usermod -aG docker "$current_user"
+        log_success "Utilisateur $current_user ajouté au groupe docker."
+        
+        # Option 1: Tenter d'activer les changements de groupe sans déconnexion
+        log_info "Activation des nouveaux privilèges groupaux pour la session actuelle..."
+        if newgrp docker <<< "exit"; then
+            log_success "Privilèges groupaux activés. Vous devriez pouvoir utiliser Docker sans sudo."
+        else
+            log_warning "La commande 'newgrp' a échoué. Pour une prise d'effet complète, vous devez vous déconnecter et vous reconnecter."
+            log_info "En attendant, vous pouvez exécuter manuellement: newgrp docker"
+        fi
     fi
+    
+    # Vérification finale des permissions
+    log_info "Vérification des permissions du socket Docker..."
+    local socket_perms=$(stat -c "%U:%G" /var/run/docker.sock 2>/dev/null || echo "NOT_FOUND")
+    log_info "Permissions du socket Docker: $socket_perms"
 }
 
 # Fonction principale
